@@ -28,6 +28,70 @@ class ProjectPlaceInputSerializer(serializers.Serializer):
     notes = serializers.CharField(required=False, allow_blank=True)
 
 
+class ProjectPlaceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectPlace
+        fields = [
+            "id",
+            "project",
+            "external_id",
+            "title",
+            "notes",
+            "visited",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "project", "external_id", "title", "created_at", "updated_at"]
+
+    def create(self, validated_data: Dict[str, Any]) -> ProjectPlace:
+        project: TravelProject = self.context["project"]
+
+        if project.places.count() >= 10:
+            raise serializers.ValidationError(
+                "A project cannot have more than 10 places (maximum is 10)."
+            )
+
+        external_id = validated_data["external_id"]
+
+        if ProjectPlace.objects.filter(project=project, external_id=external_id).exists():
+            raise serializers.ValidationError(
+                "This external place is already added to this project."
+            )
+
+        notes = validated_data.get("notes", "")
+
+        try:
+            artwork = validate_place_exists(external_id)
+        except PlaceNotFoundError as exc:
+            raise serializers.ValidationError(str(exc)) from exc
+        except ArticAPIError as exc:
+            raise serializers.ValidationError(
+                f"Error validating place with Art Institute API: {exc}"
+            ) from exc
+
+        title = artwork.get("title") or ""
+
+        place = ProjectPlace.objects.create(
+            project=project,
+            external_id=external_id,
+            title=title,
+            notes=notes,
+        )
+
+        project.recalculate_completion()
+        return place
+
+    def update(self, instance: ProjectPlace, validated_data: Dict[str, Any]) -> ProjectPlace:
+        # Only allow updating notes and visited
+        if "notes" in validated_data:
+            instance.notes = validated_data["notes"]
+        if "visited" in validated_data:
+            instance.visited = validated_data["visited"]
+        instance.save()
+        instance.project.recalculate_completion()
+        return instance
+
+
 class TravelProjectSerializer(serializers.ModelSerializer):
     places = ProjectPlaceReadSerializer(many=True, read_only=True)
     places_input = ProjectPlaceInputSerializer(

@@ -20,7 +20,11 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.routers import DefaultRouter
 
-from trips.views import TravelProjectViewSet
+from trips.views import (
+    ProjectPlaceDetailView,
+    ProjectPlaceListCreateView,
+    TravelProjectViewSet,
+)
 
 router = DefaultRouter()
 router.register("projects", TravelProjectViewSet, basename="project")
@@ -34,4 +38,14 @@ urlpatterns = [
         name="swagger-ui",
     ),
     path("api/", include(router.urls)),
+    path(
+        "api/projects/<int:project_id>/places/",
+        ProjectPlaceListCreateView.as_view(),
+        name="project-places",
+    ),
+    path(
+        "api/projects/<int:project_id>/places/<int:place_id>/",
+        ProjectPlaceDetailView.as_view(),
+        name="project-place-detail",
+    ),
 ]

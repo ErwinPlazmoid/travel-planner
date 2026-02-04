@@ -1,9 +1,9 @@
-from rest_framework import status, viewsets
+from django.shortcuts import get_object_or_404
+from rest_framework import generics, viewsets
 from rest_framework.exceptions import ValidationError
-from rest_framework.response import Response
 
-from .models import TravelProject
-from .serializers import TravelProjectSerializer
+from .models import ProjectPlace, TravelProject
+from .serializers import ProjectPlaceSerializer, TravelProjectSerializer
 
 
 class TravelProjectViewSet(viewsets.ModelViewSet):
@@ -46,3 +46,49 @@ class TravelProjectViewSet(viewsets.ModelViewSet):
                 "Cannot delete project because it has places marked as visited."
             )
         return super().destroy(request, *args, **kwargs)
+
+
+class ProjectPlaceListCreateView(generics.ListCreateAPIView):
+    """
+    List all places for a project, or add a new place to the project.
+    """
+
+    serializer_class = ProjectPlaceSerializer
+
+    def get_project(self) -> TravelProject:
+        return get_object_or_404(TravelProject, pk=self.kwargs["project_id"])
+
+    def get_queryset(self):
+        project = self.get_project()
+        qs = ProjectPlace.objects.filter(project=project)
+
+        visited = self.request.query_params.get("visited")
+        if visited is not None:
+            visited_normalized = visited.lower()
+            if visited_normalized in {"true", "1"}:
+                qs = qs.filter(visited=True)
+            elif visited_normalized in {"false", "0"}:
+                qs = qs.filter(visited=False)
+
+        return qs
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["project"] = self.get_project()
+        return context
+
+
+class ProjectPlaceDetailView(generics.RetrieveUpdateAPIView):
+    """
+    Retrieve or update a single place within a project.
+    """
+
+    serializer_class = ProjectPlaceSerializer
+    lookup_url_kwarg = "place_id"
+
+    def get_project(self) -> TravelProject:
+        return get_object_or_404(TravelProject, pk=self.kwargs["project_id"])
+
+    def get_queryset(self):
+        project = self.get_project()
+        return ProjectPlace.objects.filter(project=project)
