@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import generics, viewsets
+from rest_framework import generics, status, viewsets
 from rest_framework.exceptions import ValidationError
+from rest_framework.response import Response
 
 from .models import ProjectPlace, TravelProject
 from .serializers import ProjectPlaceSerializer, TravelProjectSerializer
@@ -77,6 +78,13 @@ class ProjectPlaceListCreateView(generics.ListCreateAPIView):
         context["project"] = self.get_project()
         return context
 
+    def create(self, request, *args, **kwargs):
+        project = self.get_project()
+        serializer = self.get_serializer(data=request.data, context={"project": project})
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 
 class ProjectPlaceDetailView(generics.RetrieveUpdateAPIView):
     """
@@ -92,3 +100,8 @@ class ProjectPlaceDetailView(generics.RetrieveUpdateAPIView):
     def get_queryset(self):
         project = self.get_project()
         return ProjectPlace.objects.filter(project=project)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["project"] = self.get_project()
+        return context

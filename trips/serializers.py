@@ -41,7 +41,7 @@ class ProjectPlaceSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "project", "external_id", "title", "created_at", "updated_at"]
+        read_only_fields = ["id", "project", "title", "created_at", "updated_at"]
 
     def create(self, validated_data: Dict[str, Any]) -> ProjectPlace:
         project: TravelProject = self.context["project"]
@@ -51,7 +51,7 @@ class ProjectPlaceSerializer(serializers.ModelSerializer):
                 "A project cannot have more than 10 places (maximum is 10)."
             )
 
-        external_id = validated_data["external_id"]
+        external_id = validated_data.pop("external_id")
 
         if ProjectPlace.objects.filter(project=project, external_id=external_id).exists():
             raise serializers.ValidationError(
@@ -82,7 +82,7 @@ class ProjectPlaceSerializer(serializers.ModelSerializer):
         return place
 
     def update(self, instance: ProjectPlace, validated_data: Dict[str, Any]) -> ProjectPlace:
-        # Only allow updating notes and visited
+        validated_data.pop("external_id", None)
         if "notes" in validated_data:
             instance.notes = validated_data["notes"]
         if "visited" in validated_data:
