@@ -55,4 +55,3 @@ class ProjectPlace(models.Model):
 
     def __str__(self) -> str:
         return f"{self.project.name} - {self.external_id}"
-
