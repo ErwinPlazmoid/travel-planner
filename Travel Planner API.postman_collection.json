@@ -80,7 +80,7 @@
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\n    \"external_id\": 129884,\n    \"notes\": \"Night visit\"\n  }",
+          "raw": "{\n    \"external_id\": 27992,\n    \"notes\": \"Night visit\"\n  }",
           "options": {
             "raw": {
               "language": "json"
@@ -163,14 +163,14 @@
         "method": "DELETE",
         "header": [],
         "url": {
-          "raw": "{{base_url}}/api/projects/1/",
+          "raw": "{{base_url}}/api/projects/4/",
           "host": [
             "{{base_url}}"
           ],
           "path": [
             "api",
             "projects",
-            "1",
+            "4",
             ""
           ]
         }
